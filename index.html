@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Lumber Tycoon</title>
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+    <div id="crosshair"></div>
+    <div id="ui">
+        Money: $<span id="money">0</span> | 
+        Inventory: <span id="woodCount">0</span>/200 Logs
+    </div>
+    <div id="prompt">Prompt Text</div>
+
+    <!-- Portfolio Shop Modal -->
+    <div id="shopModal">
+        <div class="modal-content">
+            <h2>📜 Info & Resume Shop</h2>
+            <p>Use wood-harvested cash to unlock information!</p>
+            
+            <div class="shop-item">
+                <div>
+                    <strong>1. About Me</strong>
+                    <p id="info-about">🔒 [LOCKED] - $100</p>
+                </div>
+                <button id="btn-about" onclick="buyItem('about', 100)">Buy ($100)</button>
+            </div>
+
+            <div class="shop-item">
+                <div>
+                    <strong>2. Personal Information</strong>
+                    <p id="info-personal">🔒 [LOCKED] - $200</p>
+                </div>
+                <button id="btn-personal" onclick="buyItem('personal', 200)">Buy ($200)</button>
+            </div>
+
+            <div class="shop-item">
+                <div>
+                    <strong>3. Skills</strong>
+                    <p id="info-skills">🔒 [LOCKED] - $300</p>
+                </div>
+                <button id="btn-skills" onclick="buyItem('skills', 300)">Buy ($300)</button>
+            </div>
+
+            <div class="shop-item">
+                <div>
+                    <strong>4. Certifications</strong>
+                    <p id="info-cert">🔒 [LOCKED] - $400</p>
+                </div>
+                <button id="btn-cert" onclick="buyItem('cert', 400)">Buy ($400)</button>
+            </div>
+
+            <button class="close-btn" onclick="closeShop()">Close [ESC]</button>
+        </div>
+    </div>
+
+    <script src="player.js"></script>
+    <script src="environment.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

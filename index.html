@@ -2,64 +2,83 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Lumber Tycoon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Lumberjack Portfolio Game</title>
     <link rel="stylesheet" href="style.css">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 </head>
 <body>
-
-    <div id="crosshair"></div>
     <div id="ui">
-        Money: $<span id="money">0</span> | 
-        Inventory: <span id="woodCount">0</span>/200 Logs
+        Money: $<span id="money">0</span> | Inventory: <span id="woodCount">0</span>/200 Logs
     </div>
-    <div id="prompt">Prompt Text</div>
+    
+    <!-- Clean Center Crosshair (+) -->
+    <div id="crosshair"></div>
 
-    <!-- Portfolio Shop Modal -->
-    <div id="shopModal">
-        <div class="modal-content">
-            <h2>📜 Info & Resume Shop</h2>
-            <p>Use wood-harvested cash to unlock information!</p>
-            
-            <div class="shop-item">
-                <div>
-                    <strong>1. About Me</strong>
-                    <p id="info-about">🔒 [LOCKED] - $100</p>
-                </div>
-                <button id="btn-about" onclick="buyItem('about', 100)">Buy ($100)</button>
+    <div id="prompt">Tap or Press [F] to Interact</div>
+
+    <!-- Mobile On-Screen Touch Controls -->
+    <div id="touch-controls">
+        <!-- Virtual Joystick Area (Left Side) -->
+        <div id="joystick-zone">
+            <div id="joystick-base">
+                <div id="joystick-stick"></div>
             </div>
+        </div>
 
-            <div class="shop-item">
-                <div>
-                    <strong>2. Personal Information</strong>
-                    <p id="info-personal">🔒 [LOCKED] - $200</p>
-                </div>
-                <button id="btn-personal" onclick="buyItem('personal', 200)">Buy ($200)</button>
-            </div>
-
-            <div class="shop-item">
-                <div>
-                    <strong>3. Skills</strong>
-                    <p id="info-skills">🔒 [LOCKED] - $300</p>
-                </div>
-                <button id="btn-skills" onclick="buyItem('skills', 300)">Buy ($300)</button>
-            </div>
-
-            <div class="shop-item">
-                <div>
-                    <strong>4. Certifications</strong>
-                    <p id="info-cert">🔒 [LOCKED] - $400</p>
-                </div>
-                <button id="btn-cert" onclick="buyItem('cert', 400)">Buy ($400)</button>
-            </div>
-
-            <button class="close-btn" onclick="closeShop()">Close [ESC]</button>
+        <!-- Touch Buttons Area (Right Side) -->
+        <div id="action-buttons">
+            <button id="btn-touch-action" class="touch-btn">🪓 CHOP / ACTION</button>
+            <button id="btn-touch-interact" class="touch-btn">✋ INTERACT [F]</button>
+            <button id="btn-touch-jump" class="touch-btn">🦘 JUMP</button>
         </div>
     </div>
 
+    <!-- Info & Resume Shop Modal -->
+    <div id="shopModal">
+        <div class="modal-content">
+            <h2>Info & Resume Shop</h2>
+            <div class="shop-item">
+                <div>
+                    <strong>About Me</strong>
+                    <p id="info-about">Unlock to view</p>
+                </div>
+                <button id="btn-about" onclick="buyItem('about', 500)">UNLOCK ($500)</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <strong>Personal Info</strong>
+                    <p id="info-personal">Unlock to view</p>
+                </div>
+                <button id="btn-personal" onclick="buyItem('personal', 1000)">UNLOCK ($1000)</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <strong>Skills</strong>
+                    <p id="info-skills">Unlock to view</p>
+                </div>
+                <button id="btn-skills" onclick="buyItem('skills', 1500)">UNLOCK ($1500)</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <strong>Certificate</strong>
+                    <p id="info-cert">Unlock to view</p>
+                </div>
+                <button id="btn-cert" onclick="buyItem('cert', 2000)">UNLOCK ($2000)</button>
+            </div>
+            <button class="close-btn" onclick="closeShop()">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Dedicated Image Viewer Pop-up Modal -->
+    <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="position: relative; max-width: 90%; max-height: 85%; background: #1a1a1a; padding: 15px; border-radius: 12px; border: 2px solid #ffffff33; text-align: center;">
+            <span onclick="closeImageModal()" style="position: absolute; top: -15px; right: -15px; background: #ff4444; color: white; width: 35px; height: 35px; border-radius: 50%; font-size: 20px; font-weight: bold; line-height: 35px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">×</span>
+            <img id="modalImage" src="" alt="View Item" style="max-width: 100%; max-height: 70vh; border-radius: 8px; object-fit: contain;">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
     <script src="player.js"></script>
     <script src="environment.js"></script>
     <script src="main.js"></script>

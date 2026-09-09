@@ -3,6 +3,27 @@ let woodInventory = 0;
 const MAX_CAPACITY = 200;
 let unlockedItems = { about: false, personal: false, skills: false, cert: false };
 
+const itemImages = {
+    about: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
+    personal: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+    skills: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
+    cert: 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=800&q=80'
+};
+
+window.openImageModal = function(itemKey) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImage');
+    if (modal && img && itemImages[itemKey]) {
+        img.src = itemImages[itemKey];
+        modal.style.display = 'flex';
+    }
+};
+
+window.closeImageModal = function() {
+    const modal = document.getElementById('imageModal');
+    if (modal) modal.style.display = 'none';
+};
+
 function loadGameProgress() {
     const savedMoney = localStorage.getItem('lumber_money');
     const savedWood = localStorage.getItem('lumber_wood');
@@ -23,14 +44,11 @@ function loadGameProgress() {
         Object.keys(unlockedItems).forEach(item => {
             if (unlockedItems[item]) {
                 const btn = document.getElementById(`btn-${item}`);
-                const text = document.getElementById(`info-${item}`);
-                if (btn && text) {
-                    btn.disabled = true;
-                    btn.innerText = "UNLOCKED";
-                    if (item === 'about') text.innerText = "🔓 Computer Engineering Student | Full-Stack & Web Developer";
-                    if (item === 'personal') text.innerText = "🔓 Location: Philippines | Focus: Web App & Microcontrollers";
-                    if (item === 'skills') text.innerText = "🔓 JavaScript, Three.js, React, C++, Arduino, Physics Engine";
-                    if (item === 'cert') text.innerText = "🔓 Certified Computer Engineering Undergraduate / OJT Completed";
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "VIEW";
+                    btn.style.backgroundColor = "#2e8b57";
+                    btn.onclick = () => window.openImageModal(item);
                 }
             }
         });
@@ -44,23 +62,26 @@ function saveGameProgress() {
 }
 
 window.buyItem = function(item, price) {
-    if (money >= price && !unlockedItems[item]) {
+    if (unlockedItems[item]) {
+        window.openImageModal(item);
+        return;
+    }
+
+    if (money >= price) {
         money -= price;
         document.getElementById('money').innerText = money;
         unlockedItems[item] = true;
 
         const btn = document.getElementById(`btn-${item}`);
-        const text = document.getElementById(`info-${item}`);
-
-        btn.disabled = true;
-        btn.innerText = "UNLOCKED";
-
-        if (item === 'about') text.innerText = "🔓 Computer Engineering Student | Full-Stack & Web Developer";
-        if (item === 'personal') text.innerText = "🔓 Location: Philippines | Focus: Web App & Microcontrollers";
-        if (item === 'skills') text.innerText = "🔓 JavaScript, Three.js, React, C++, Arduino, Physics Engine";
-        if (item === 'cert') text.innerText = "🔓 Certified Computer Engineering Undergraduate / OJT Completed";
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "VIEW";
+            btn.style.backgroundColor = "#2e8b57";
+            btn.onclick = () => window.openImageModal(item);
+        }
 
         saveGameProgress();
+        window.openImageModal(item);
     }
 };
 
@@ -77,7 +98,8 @@ window.addEventListener('DOMContentLoaded', () => {
     let sunGroup, moonGroup;
     let dayTime = 0; 
     let lastTime = performance.now();
-    const CYCLE_DURATION_MS = 600000; 
+    
+    const CYCLE_DURATION_MS = 480000; 
 
     const promptUI = document.getElementById('prompt');
     const moneyUI = document.getElementById('money');
@@ -164,6 +186,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
         loadGameProgress();
         initInteractions();
+
+        // Responsive window & mobile screen resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
         animate();
     }
 
@@ -212,54 +242,78 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function initInteractions() {
-        document.addEventListener('click', () => {
-            if (!player.isLocked || document.getElementById('shopModal').style.display === 'flex') return;
+    function executeChopAction() {
+        if (document.getElementById('shopModal').style.display === 'flex' || document.getElementById('imageModal').style.display === 'flex') return;
 
-            player.swingAxe();
+        player.swingAxe();
 
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObjects(scene.children, true);
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects(scene.children, true);
 
-            if (intersects.length > 0 && intersects[0].distance < 6) {
-                const hit = intersects[0].object;
-                environment.trees.forEach((tree, idx) => {
-                    if (tree.group.children.includes(hit)) {
-                        tree.health--;
+        if (intersects.length > 0 && intersects[0].distance < 6) {
+            const hit = intersects[0].object;
+            environment.trees.forEach((tree, idx) => {
+                if (tree.group.children.includes(hit)) {
+                    tree.health--;
 
-                        hit.material.color.setHex(0xff3333);
-                        setTimeout(() => { hit.material.color.setHex(0xffffff); }, 120);
+                    hit.material.color.setHex(0xff3333);
+                    setTimeout(() => { hit.material.color.setHex(0xffffff); }, 120);
 
-                        const cutMesh = new THREE.Mesh(
-                            new THREE.BoxGeometry(0.5, 0.1, 0.5),
-                            new THREE.MeshBasicMaterial({ color: 0x2b1d0c })
-                        );
-                        cutMesh.position.set(0, 1.5 + (tree.health * 0.4), 0.3);
-                        tree.group.add(cutMesh);
+                    const cutMesh = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.5, 0.1, 0.5),
+                        new THREE.MeshBasicMaterial({ color: 0x2b1d0c })
+                    );
+                    cutMesh.position.set(0, 1.5 + (tree.health * 0.4), 0.3);
+                    tree.group.add(cutMesh);
 
-                        if (tree.health <= 0) {
-                            const treeX = tree.x;
-                            const treeZ = tree.z;
+                    if (tree.health <= 0) {
+                        const treeX = tree.x;
+                        const treeZ = tree.z;
 
-                            const leavesMeshes = tree.group.children.filter(child => child.geometry instanceof THREE.ConeGeometry);
+                        const leavesMeshes = tree.group.children.filter(child => child.geometry instanceof THREE.ConeGeometry);
 
-                            scene.remove(tree.group);
-                            environment.trees.splice(idx, 1);
+                        scene.remove(tree.group);
+                        environment.trees.splice(idx, 1);
 
-                            spawnFallingLeaves(treeX, treeZ, leavesMeshes);
-                            spawnLog(treeX, 1.2, treeZ);
-                            spawnLog(treeX, 2.4, treeZ);
-                        }
+                        spawnFallingLeaves(treeX, treeZ, leavesMeshes);
+                        spawnLog(treeX, 1.2, treeZ);
+                        spawnLog(treeX, 2.4, treeZ);
                     }
-                });
-            }
+                }
+            });
+        }
+    }
+
+    function initInteractions() {
+        // Desktop Click Interaction
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#touch-controls')) return;
+            if (player.isLocked) executeChopAction();
         });
 
+        // Touch Action Button Events
+        const btnAction = document.getElementById('btn-touch-action');
+        if (btnAction) {
+            btnAction.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                executeChopAction();
+                pickUpLogToInventory();
+            });
+        }
+
+        const btnInteract = document.getElementById('btn-touch-interact');
+        if (btnInteract) {
+            btnInteract.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleShopInteractions();
+            });
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && player.isLocked) e.preventDefault();
-            if (e.code === 'KeyE' && player.isLocked) pickUpLogToInventory();
-            if (e.code === 'KeyF' && player.isLocked) handleShopInteractions();
+            if (e.code === 'Space' && (player.isLocked || player.isTouchDevice)) e.preventDefault();
+            if (e.code === 'KeyE' && (player.isLocked || player.isTouchDevice)) pickUpLogToInventory();
+            if (e.code === 'KeyF' && (player.isLocked || player.isTouchDevice)) handleShopInteractions();
         });
     }
 
@@ -334,7 +388,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         if (distToPortfolioNPC < 6) {
-            document.exitPointerLock();
+            if (document.pointerLockElement) document.exitPointerLock();
             document.getElementById('shopModal').style.display = 'flex';
         }
     }
@@ -441,7 +495,7 @@ window.addEventListener('DOMContentLoaded', () => {
             environment.updateGrass(0.016);
         }
 
-        if (document.getElementById('shopModal').style.display !== 'flex') {
+        if (document.getElementById('shopModal').style.display !== 'flex' && document.getElementById('imageModal').style.display !== 'flex') {
             player.update();
         }
 
@@ -450,7 +504,7 @@ window.addEventListener('DOMContentLoaded', () => {
             log.mesh.quaternion.copy(log.body.quaternion);
         });
 
-        if (player.isLocked) {
+        if (player.isLocked || player.isTouchDevice) {
             const woodNPCWorldPos = new THREE.Vector3();
             environment.npcMesh.getWorldPosition(woodNPCWorldPos);
             const distToWoodNPC = camera.position.distanceTo(woodNPCWorldPos);
@@ -461,11 +515,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
             if (distToWoodNPC < 6) {
                 promptUI.innerText = woodInventory > 0 
-                    ? `Press [F] to sell all ${woodInventory} logs for $${woodInventory * 75}`
+                    ? `Tap or Press [F] to sell all ${woodInventory} logs for $${woodInventory * 75}`
                     : "No logs in inventory to sell!";
                 promptUI.style.display = 'block';
             } else if (distToPortfolioNPC < 6) {
-                promptUI.innerText = "Press [F] to open Info & Resume Shop";
+                promptUI.innerText = "Tap or Press [F] to open Info & Resume Shop";
                 promptUI.style.display = 'block';
             } else {
                 const raycaster = new THREE.Raycaster();
@@ -474,7 +528,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (intersects.length > 0 && intersects[0].distance < 6) {
                     promptUI.innerText = woodInventory < MAX_CAPACITY 
-                        ? "Press [E] to collect log into Inventory" 
+                        ? "Tap Action or Press [E] to collect log" 
                         : "Inventory Full! (200/200)";
                     promptUI.style.display = 'block';
                 } else {
@@ -487,4 +541,4 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     init();
-}); 
+});

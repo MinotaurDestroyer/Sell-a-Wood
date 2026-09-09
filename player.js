@@ -275,7 +275,9 @@ class PlayerController {
 
             const walkableObjects = this.scene.children.filter(obj => 
                 !(obj instanceof THREE.InstancedMesh) && 
-                !(obj.geometry instanceof THREE.CylinderGeometry)
+                !(obj instanceof THREE.Points) &&
+                !(obj.geometry instanceof THREE.CylinderGeometry) &&
+                !(obj.userData && obj.userData.noCollide)
             );
 
             const raycaster = new THREE.Raycaster(
@@ -296,6 +298,19 @@ class PlayerController {
                 this.camera.position.y = groundY;
                 this.velocity.y = 0;
                 this.canJump = true;
+            }
+
+            // Keep the player within the playable island so they can never
+            // wander off the finite ground plane into empty space.
+            const boundary = 124;
+            this.camera.position.x = Math.max(-boundary, Math.min(boundary, this.camera.position.x));
+            this.camera.position.z = Math.max(-boundary, Math.min(boundary, this.camera.position.z));
+
+            // Safety net: if something ever knocks the player far below the
+            // world (e.g. a stray collision), recover instead of falling forever.
+            if (this.camera.position.y < -10) {
+                this.camera.position.set(0, this.playerHeight, 5);
+                this.velocity.y = 0;
             }
         }
     }

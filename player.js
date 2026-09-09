@@ -6,26 +6,45 @@ class PlayerController {
         this.yaw = 0;
         this.pitch = 0;
         this.moveState = { forward: false, backward: false, left: false, right: false };
-        this.speed = 0.15;
+        
+        // Character Speed
+        this.speed = 0.08;
 
-        // Jump Mechanics
         this.velocity = new THREE.Vector3();
         this.canJump = false;
         this.gravity = -0.015;
         this.jumpPower = 0.35;
         this.playerHeight = 2.0;
 
+        // ZOOM POV MECHANICS
+        this.defaultFov = 75;
+        this.minFov = 30;
+        this.maxFov = 95;
+        this.targetFov = 75;
+
+        // Touch Control Variables
+        this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        this.touchLookId = null;
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+
         this.axeGroup = null;
         this.isSwinging = false;
         this.swingProgress = 0;
 
         this.initControls();
+        this.initTouchControls();
         this.createAxe();
     }
 
     initControls() {
-        document.body.addEventListener('click', () => {
-            if (!this.isLocked) document.body.requestPointerLock();
+        document.body.addEventListener('click', (e) => {
+            // Ignore pointer lock request if clicking touch controls or modals
+            if (e.target.closest('#touch-controls') || e.target.closest('#shopModal') || e.target.closest('#imageModal')) return;
+
+            if (!this.isLocked && !this.isTouchDevice) {
+                document.body.requestPointerLock();
+            }
         });
 
         document.addEventListener('pointerlockchange', () => {
@@ -43,8 +62,140 @@ class PlayerController {
             this.camera.rotation.y = this.yaw;
         });
 
+        document.addEventListener('wheel', (e) => {
+            if (!this.isLocked && !this.isTouchDevice) return;
+
+            if (e.deltaY < 0) {
+                this.targetFov = Math.max(this.minFov, this.targetFov - 5);
+            } else if (e.deltaY > 0) {
+                this.targetFov = Math.min(this.maxFov, this.targetFov + 5);
+            }
+        });
+
         document.addEventListener('keydown', (e) => this.onKey(e.code, true));
         document.addEventListener('keyup', (e) => this.onKey(e.code, false));
+    }
+
+    // --- TOUCH / MOBILE CONTROLS SYSTEM ---
+    initTouchControls() {
+        const joystickBase = document.getElementById('joystick-base');
+        const joystickStick = document.getElementById('joystick-stick');
+
+        if (!joystickBase || !joystickStick) return;
+
+        let joystickTouchId = null;
+        let baseRect = null;
+
+        // Virtual Joystick Touch Listeners
+        joystickBase.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            joystickTouchId = touch.identifier;
+            baseRect = joystickBase.getBoundingClientRect();
+            this.updateJoystick(touch, baseRect, joystickStick);
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+
+                // Joystick movement
+                if (touch.identifier === joystickTouchId && baseRect) {
+                    this.updateJoystick(touch, baseRect, joystickStick);
+                }
+
+                // Camera Look Dragging (Right half of the screen)
+                if (touch.identifier === this.touchLookId) {
+                    const deltaX = touch.clientX - this.lastTouchX;
+                    const deltaY = touch.clientY - this.lastTouchY;
+
+                    const sensitivity = 0.004;
+                    this.yaw -= deltaX * sensitivity;
+                    this.pitch -= deltaY * sensitivity;
+                    this.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, this.pitch));
+
+                    this.camera.rotation.x = this.pitch;
+                    this.camera.rotation.y = this.yaw;
+
+                    this.lastTouchX = touch.clientX;
+                    this.lastTouchY = touch.clientY;
+                }
+            }
+        }, { passive: false });
+
+        const resetJoystick = (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === joystickTouchId) {
+                    joystickTouchId = null;
+                    joystickStick.style.top = '35px';
+                    joystickStick.style.left = '35px';
+                    this.moveState.forward = false;
+                    this.moveState.backward = false;
+                    this.moveState.left = false;
+                    this.moveState.right = false;
+                }
+                if (touch.identifier === this.touchLookId) {
+                    this.touchLookId = null;
+                }
+            }
+        };
+
+        window.addEventListener('touchend', resetJoystick);
+        window.addEventListener('touchcancel', resetJoystick);
+
+        // Screen Touch Look Listener (Right side of screen swipe)
+        window.addEventListener('touchstart', (e) => {
+            if (document.getElementById('shopModal').style.display === 'flex' || document.getElementById('imageModal').style.display === 'flex') return;
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                // Touch right side of screen for looking around
+                if (touch.clientX > window.innerWidth / 2 && this.touchLookId === null && !e.target.closest('#action-buttons')) {
+                    this.touchLookId = touch.identifier;
+                    this.lastTouchX = touch.clientX;
+                    this.lastTouchY = touch.clientY;
+                }
+            }
+        });
+
+        // Touch Action Buttons Event Bindings
+        const btnJump = document.getElementById('btn-touch-jump');
+        if (btnJump) {
+            btnJump.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (this.canJump) {
+                    this.velocity.y = this.jumpPower;
+                    this.canJump = false;
+                }
+            });
+        }
+    }
+
+    updateJoystick(touch, baseRect, stickElement) {
+        const centerX = baseRect.left + baseRect.width / 2;
+        const centerY = baseRect.top + baseRect.height / 2;
+
+        let deltaX = touch.clientX - centerX;
+        let deltaY = touch.clientY - centerY;
+
+        const maxRadius = 40;
+        const distance = Math.hypot(deltaX, deltaY);
+
+        if (distance > maxRadius) {
+            deltaX = (deltaX / distance) * maxRadius;
+            deltaY = (deltaY / distance) * maxRadius;
+        }
+
+        stickElement.style.left = `${35 + deltaX}px`;
+        stickElement.style.top = `${35 + deltaY}px`;
+
+        // Movement Threshold Sensitivity
+        const threshold = 12;
+        this.moveState.forward = deltaY < -threshold;
+        this.moveState.backward = deltaY > threshold;
+        this.moveState.left = deltaX < -threshold;
+        this.moveState.right = deltaX > threshold;
     }
 
     onKey(code, pressed) {
@@ -53,7 +204,7 @@ class PlayerController {
         if (code === 'KeyA') this.moveState.left = pressed;
         if (code === 'KeyD') this.moveState.right = pressed;
 
-        if (code === 'Space' && pressed && this.canJump && this.isLocked) {
+        if (code === 'Space' && pressed && this.canJump && (this.isLocked || this.isTouchDevice)) {
             this.velocity.y = this.jumpPower;
             this.canJump = false;
         }
@@ -97,6 +248,11 @@ class PlayerController {
     }
 
     update() {
+        if (Math.abs(this.camera.fov - this.targetFov) > 0.01) {
+            this.camera.fov += (this.targetFov - this.camera.fov) * 0.15;
+            this.camera.updateProjectionMatrix();
+        }
+
         if (this.isSwinging) {
             this.swingProgress += 0.15;
             this.axeGroup.rotation.x = -Math.sin(this.swingProgress) * 1.2;
@@ -109,7 +265,7 @@ class PlayerController {
             }
         }
 
-        if (this.isLocked) {
+        if (this.isLocked || this.isTouchDevice) {
             const forwardVector = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
             forwardVector.y = 0;
             forwardVector.normalize();
@@ -126,7 +282,6 @@ class PlayerController {
             this.velocity.y += this.gravity;
             this.camera.position.y += this.velocity.y;
 
-            // FIX: I-filter para HINDI isali ang damo o troso sa ground detection
             const walkableObjects = this.scene.children.filter(obj => 
                 !(obj instanceof THREE.InstancedMesh) && 
                 !(obj.geometry instanceof THREE.CylinderGeometry)

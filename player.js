@@ -39,7 +39,6 @@ class PlayerController {
 
     initControls() {
         document.body.addEventListener('click', (e) => {
-            // Ignore pointer lock request if clicking touch controls or modals
             if (e.target.closest('#touch-controls') || e.target.closest('#shopModal') || e.target.closest('#imageModal')) return;
 
             if (!this.isLocked && !this.isTouchDevice) {
@@ -76,7 +75,6 @@ class PlayerController {
         document.addEventListener('keyup', (e) => this.onKey(e.code, false));
     }
 
-    // --- TOUCH / MOBILE CONTROLS SYSTEM ---
     initTouchControls() {
         const joystickBase = document.getElementById('joystick-base');
         const joystickStick = document.getElementById('joystick-stick');
@@ -86,7 +84,6 @@ class PlayerController {
         let joystickTouchId = null;
         let baseRect = null;
 
-        // Virtual Joystick Touch Listeners
         joystickBase.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.changedTouches[0];
@@ -99,12 +96,10 @@ class PlayerController {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
 
-                // Joystick movement
                 if (touch.identifier === joystickTouchId && baseRect) {
                     this.updateJoystick(touch, baseRect, joystickStick);
                 }
 
-                // Camera Look Dragging (Right half of the screen)
                 if (touch.identifier === this.touchLookId) {
                     const deltaX = touch.clientX - this.lastTouchX;
                     const deltaY = touch.clientY - this.lastTouchY;
@@ -128,8 +123,8 @@ class PlayerController {
                 const touch = e.changedTouches[i];
                 if (touch.identifier === joystickTouchId) {
                     joystickTouchId = null;
-                    joystickStick.style.top = '35px';
-                    joystickStick.style.left = '35px';
+                    joystickStick.style.left = '42.5px';
+                    joystickStick.style.top = '42.5px';
                     this.moveState.forward = false;
                     this.moveState.backward = false;
                     this.moveState.left = false;
@@ -144,13 +139,11 @@ class PlayerController {
         window.addEventListener('touchend', resetJoystick);
         window.addEventListener('touchcancel', resetJoystick);
 
-        // Screen Touch Look Listener (Right side of screen swipe)
         window.addEventListener('touchstart', (e) => {
             if (document.getElementById('shopModal').style.display === 'flex' || document.getElementById('imageModal').style.display === 'flex') return;
 
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
-                // Touch right side of screen for looking around
                 if (touch.clientX > window.innerWidth / 2 && this.touchLookId === null && !e.target.closest('#action-buttons')) {
                     this.touchLookId = touch.identifier;
                     this.lastTouchX = touch.clientX;
@@ -159,7 +152,6 @@ class PlayerController {
             }
         });
 
-        // Touch Action Buttons Event Bindings
         const btnJump = document.getElementById('btn-touch-jump');
         if (btnJump) {
             btnJump.addEventListener('touchstart', (e) => {
@@ -179,7 +171,7 @@ class PlayerController {
         let deltaX = touch.clientX - centerX;
         let deltaY = touch.clientY - centerY;
 
-        const maxRadius = 40;
+        const maxRadius = 45;
         const distance = Math.hypot(deltaX, deltaY);
 
         if (distance > maxRadius) {
@@ -187,11 +179,10 @@ class PlayerController {
             deltaY = (deltaY / distance) * maxRadius;
         }
 
-        stickElement.style.left = `${35 + deltaX}px`;
-        stickElement.style.top = `${35 + deltaY}px`;
+        stickElement.style.left = `${42.5 + deltaX}px`;
+        stickElement.style.top = `${42.5 + deltaY}px`;
 
-        // Movement Threshold Sensitivity
-        const threshold = 12;
+        const threshold = 10;
         this.moveState.forward = deltaY < -threshold;
         this.moveState.backward = deltaY > threshold;
         this.moveState.left = deltaX < -threshold;

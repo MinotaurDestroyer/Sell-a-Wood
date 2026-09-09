@@ -16,20 +16,22 @@
 
     <div id="prompt">Tap or Press [F] to Interact</div>
 
-    <!-- Mobile On-Screen Touch Controls -->
+    <!-- Roblox / Minecraft Mobile Style Touch UI -->
     <div id="touch-controls">
-        <!-- Virtual Joystick Area (Left Side) -->
+        <!-- Dynamic Analog Joystick Zone -->
         <div id="joystick-zone">
             <div id="joystick-base">
                 <div id="joystick-stick"></div>
             </div>
         </div>
 
-        <!-- Touch Buttons Area (Right Side) -->
+        <!-- Clickable Action Buttons -->
         <div id="action-buttons">
-            <button id="btn-touch-action" class="touch-btn">🪓 CHOP / ACTION</button>
-            <button id="btn-touch-interact" class="touch-btn">✋ INTERACT [F]</button>
-            <button id="btn-touch-jump" class="touch-btn">🦘 JUMP</button>
+            <button id="btn-touch-action" class="mobile-btn btn-chop">🪓</button>
+            <div class="secondary-btns">
+                <button id="btn-touch-interact" class="mobile-btn btn-use">🖐️</button>
+                <button id="btn-touch-jump" class="mobile-btn btn-jump">🦘</button>
+            </div>
         </div>
     </div>
 

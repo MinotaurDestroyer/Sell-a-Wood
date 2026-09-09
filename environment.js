@@ -59,7 +59,6 @@ class EnvironmentManager {
         this.world.addBody(groundBody);
     }
 
-    // --- DENSE ANIMATED GRASS FIELD ---
     createGrassField() {
         const clusterCount = 30000;
 
@@ -156,7 +155,6 @@ class EnvironmentManager {
         }
     }
 
-    // --- PERIMETER BUILDINGS GENERATOR ---
     createOuterBuildings() {
         const buildingGroup = new THREE.Group();
         const count = 60;
@@ -239,7 +237,7 @@ class EnvironmentManager {
 
             this.clouds.push({
                 mesh: cloudGroup,
-                speed: 0.02 + Math.random() * 0.03
+                speed: 0.005 + Math.random() * 0.005
             });
         }
     }
@@ -387,7 +385,6 @@ class EnvironmentManager {
         const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 2.4), wallMat);
         leftWall.position.set(-1.65, 1.35, 0);
         shopGroup.add(leftWall);
-
         const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 2.4), wallMat);
         rightWall.position.set(1.65, 1.35, 0);
         shopGroup.add(rightWall);
